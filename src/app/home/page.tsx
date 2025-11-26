@@ -1,0 +1,254 @@
+'use client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../../lib/firebase/config';
+
+interface Pet {
+  id: string;
+  nome: string;
+  descricao: string;
+  contato: string;
+  imagemBase64?: string;
+  userId: string;
+}
+
+export default function HomePage() {
+  const { user, userRole, loading: authLoading, signOut } = useAuth();
+  const router = useRouter();
+  const [pets, setPets] = useState<Pet[]>([]);
+  const [petsLoading, setPetsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+      return;
+    }
+
+    if (user) {
+      const q = query(
+        collection(db, 'pets'),
+        where('userId', '==', user.uid)
+      );
+      
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const petsData: Pet[] = [];
+        snapshot.forEach((doc) => {
+          petsData.push({ id: doc.id, ...doc.data() } as Pet);
+        });
+        setPets(petsData);
+        setPetsLoading(false);
+      });
+
+      return () => unsubscribe();
+    }
+  }, [user, authLoading, router]);
+
+  const handleLogout = async () => {
+    if (confirm('Tem certeza que deseja sair?')) {
+      await signOut();
+      router.push('/login');
+    }
+  };
+
+  const featureCards = [
+    { 
+      title: 'Comunidade', 
+      description: 'Conecte-se com outros tutores', 
+      icon: '👥', 
+      route: '/community' 
+    },
+    { 
+      title: 'Loja', 
+      description: 'Produtos para seu pet', 
+      icon: '🛍️', 
+      route: '/loja' 
+    },
+    { 
+      title: 'Pets', 
+      description: 'Gerencie seus pets', 
+      icon: '🐾', 
+      route: '/pets' 
+    },
+    { 
+      title: 'Desaparecidos', 
+      description: 'Ajude a encontrar pets', 
+      icon: '⚠️', 
+      route: '/desaparecidos' 
+    },
+  ];
+
+  const adminFeatures = [
+    { title: 'Usuários', icon: '👥', section: 'users' },
+    { title: 'Blog/Chat', icon: '💬', section: 'blog-chat' },
+    { title: 'Pets Desaparecidos', icon: '🐕', section: 'missing-pets' },
+  ];
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex-center">
+        <div className="text-center">
+          <div className="loading-spinner"></div>
+          <p>Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background-color pb-16">
+      {/* Header */}
+      <header className="header">
+        <div className="header-content">
+          <div className="header-brand">
+            <span>🐾</span>
+            <span>PetLoc</span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="btn btn-ghost text-on-primary"
+          >
+            Sair
+          </button>
+        </div>
+      </header>
+
+      <div className="container">
+        {/* Seção de Boas-vindas */}
+        <section className="mb-6">
+          <div className="card text-center">
+            <h2 className="text-2xl font-bold mb-2">Bem-vindo ao PetLoc!</h2>
+            <p className="text-on-surface">Cuidando dos seus pets com amor e tecnologia</p>
+          </div>
+        </section>
+
+        {/* Seção Pets */}
+        <section className="mb-6">
+          <div className="flex-between mb-4">
+            <h3 className="text-lg font-semibold">Meus Pets</h3>
+            <button 
+              onClick={() => router.push('/pets/cadastro')}
+              className="btn btn-primary btn-sm"
+            >
+              + Adicionar Pet
+            </button>
+          </div>
+
+          {petsLoading ? (
+            <div className="flex-center py-8">
+              <div className="loading-spinner-primary"></div>
+            </div>
+          ) : pets.length === 0 ? (
+            <div className="card text-center py-8">
+              <div className="text-4xl mb-4">🐾</div>
+              <p className="text-on-surface mb-4">Nenhum pet cadastrado</p>
+              <button 
+                onClick={() => router.push('/pets/cadastro')}
+                className="btn btn-primary"
+              >
+                Cadastrar Primeiro Pet
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              {pets.slice(0, 4).map((pet) => (
+                <div 
+                  key={pet.id}
+                  onClick={() => router.push(`/pets/editar/${pet.id}`)}
+                  className="card text-center cursor-pointer hover-lift"
+                >
+                  <div className="w-16 h-16 rounded-full bg-gray-100 flex-center mx-auto mb-2 overflow-hidden">
+                    {pet.imagemBase64 ? (
+                      <img 
+                        src={`data:image/jpeg;base64,${pet.imagemBase64}`}
+                        alt={pet.nome}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl">🐾</span>
+                    )}
+                  </div>
+                  <h4 className="font-semibold truncate">{pet.nome}</h4>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Funcionalidades Principais */}
+        <section className="mb-6">
+          <h3 className="text-lg font-semibold mb-4">Funcionalidades</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {featureCards.map((item, index) => (
+              <div
+                key={index}
+                onClick={() => router.push(item.route)}
+                className="card text-center cursor-pointer hover-lift"
+              >
+                <div className="w-12 h-12 bg-blue-50 rounded-full flex-center mx-auto mb-2">
+                  <span className="text-xl">{item.icon}</span>
+                </div>
+                <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
+                <p className="text-xs text-on-surface">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Seção Admin */}
+        {userRole === 'admin' && (
+          <section className="mb-6">
+            <h3 className="text-lg font-semibold mb-4">Painel Administrativo</h3>
+            <div className="grid grid-cols-2 gap-4">
+              {adminFeatures.map((item, index) => (
+                <div
+                  key={index}
+                  onClick={() => router.push(`/admin/${item.section}`)}
+                  className="card text-center cursor-pointer bg-yellow-50 border-yellow-200 hover-lift"
+                >
+                  <div className="w-12 h-12 bg-yellow-100 rounded-full flex-center mx-auto mb-2">
+                    <span className="text-xl">{item.icon}</span>
+                  </div>
+                  <h4 className="font-semibold text-sm">{item.title}</h4>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="nav-bar">
+        <button 
+          onClick={() => router.push('/home')}
+          className="nav-item active"
+        >
+          <span className="nav-icon">🏠</span>
+          <span className="nav-label">Início</span>
+        </button>
+        <button 
+          onClick={() => router.push('/pets')}
+          className="nav-item"
+        >
+          <span className="nav-icon">🐾</span>
+          <span className="nav-label">Pets</span>
+        </button>
+        <button 
+          onClick={() => router.push('/loja')}
+          className="nav-item"
+        >
+          <span className="nav-icon">🛍️</span>
+          <span className="nav-label">Loja</span>
+        </button>
+        <button 
+          onClick={() => router.push('/community')}
+          className="nav-item"
+        >
+          <span className="nav-icon">👥</span>
+          <span className="nav-label">Comunidade</span>
+        </button>
+      </nav>
+    </div>
+  );
+}

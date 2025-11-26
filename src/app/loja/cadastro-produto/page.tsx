@@ -1,0 +1,296 @@
+'use client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../../../lib/firebase/config';
+
+const categorias = [
+  'Ração',
+  'Brinquedos',
+  'Coleiras',
+  'Medicamentos',
+  'Higiene',
+  'Acessórios',
+  'Outros'
+];
+
+export default function CadastroProdutoPage() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [nome, setNome] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [preco, setPreco] = useState('');
+  const [contato, setContato] = useState('');
+  const [estoque, setEstoque] = useState('');
+  const [categoria, setCategoria] = useState(categorias[0]);
+  const [imagem, setImagem] = useState<File | null>(null);
+  const [imagemPreview, setImagemPreview] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  if (!user) {
+    router.push('/login');
+    return null;
+  }
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImagem(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagemPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    if (!nome || !descricao || !preco || !contato) {
+      setError('Preencha todos os campos obrigatórios');
+      setLoading(false);
+      return;
+    }
+
+    // Validar preço
+    const precoNum = parseFloat(preco.replace(',', '.'));
+    if (isNaN(precoNum) || precoNum <= 0) {
+      setError('Preço inválido');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      let imagemBase64: string | undefined;
+
+      if (imagem) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = reader.result as string;
+          imagemBase64 = base64String.split(',')[1];
+        };
+        reader.readAsDataURL(imagem);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      await addDoc(collection(db, 'produtos_loja'), {
+        nome: nome.trim(),
+        descricao: descricao.trim(),
+        preco: precoNum.toFixed(2),
+        contato: contato.trim(),
+        estoque: estoque ? parseInt(estoque) : null,
+        categoria: categoria,
+        imagemBase64: imagemBase64 || '',
+        userId: user.uid,
+        ativo: true,
+        criadoEm: new Date(),
+        atualizadoEm: new Date(),
+      });
+
+      router.push('/loja');
+    } catch (error: any) {
+      setError('Erro ao cadastrar produto: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeImagem = () => {
+    setImagem(null);
+    setImagemPreview('');
+  };
+
+  return (
+    <div className="min-h-screen bg-background-color">
+      <header className="header">
+        <div className="header-content">
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => router.push('/loja')}
+              className="p-2 hover:bg-primary-dark rounded-lg transition-colors"
+            >
+              <span className="text-lg">←</span>
+            </button>
+            <h1 className="text-xl font-bold">Cadastrar Produto</h1>
+          </div>
+        </div>
+      </header>
+
+      <div className="container">
+        <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
+          {error && (
+            <div className="alert alert-error mb-6">
+              {error}
+            </div>
+          )}
+
+          {/* Upload de Imagem */}
+          <div className="card mb-6">
+            <label className="form-label">
+              Imagem do Produto
+            </label>
+            
+            {imagemPreview ? (
+              <div className="text-center">
+                <div className="relative inline-block">
+                  <img
+                    src={imagemPreview}
+                    alt="Preview"
+                    className="w-48 h-48 rounded-lg object-cover mx-auto shadow-md"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImagem}
+                    className="absolute -top-2 -right-2 bg-error-color text-on-error w-8 h-8 rounded-full flex-center text-sm hover:bg-red-600 transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  Imagem selecionada: {imagem?.name}
+                </p>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary-color transition-colors cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                  id="imagem-upload"
+                />
+                <label htmlFor="imagem-upload" className="cursor-pointer">
+                  <div className="text-4xl text-gray-400 mb-2">📷</div>
+                  <p className="text-gray-600 font-medium">Clique para adicionar imagem</p>
+                  <p className="text-gray-500 text-sm mt-1">
+                    Ou arraste e solte uma imagem aqui
+                  </p>
+                </label>
+              </div>
+            )}
+          </div>
+
+          {/* Formulário */}
+          <div className="card space-y-6">
+            <div className="form-group">
+              <label className="form-label">
+                Nome do Produto *
+              </label>
+              <input
+                type="text"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                className="form-input"
+                placeholder="Ex: Ração Premium para Cães"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                Descrição *
+              </label>
+              <textarea
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                rows={4}
+                className="form-input form-textarea"
+                placeholder="Descreva o produto, suas características, benefícios..."
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label className="form-label">
+                  Preço *
+                </label>
+                <input
+                  type="text"
+                  value={preco}
+                  onChange={(e) => setPreco(e.target.value)}
+                  className="form-input"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  Estoque
+                </label>
+                <input
+                  type="number"
+                  value={estoque}
+                  onChange={(e) => setEstoque(e.target.value)}
+                  className="form-input"
+                  placeholder="Opcional"
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                Categoria *
+              </label>
+              <select
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+                className="form-input"
+              >
+                {categorias.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                Contato *
+              </label>
+              <input
+                type="text"
+                value={contato}
+                onChange={(e) => setContato(e.target.value)}
+                className="form-input"
+                placeholder="WhatsApp, email, telefone..."
+                required
+              />
+            </div>
+
+            <div className="flex space-x-4 pt-4">
+              <button
+                type="button"
+                onClick={() => router.push('/loja')}
+                className="flex-1 btn btn-outlined"
+                disabled={loading}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 btn btn-primary"
+              >
+                {loading ? (
+                  <span className="flex-center">
+                    <div className="loading-spinner"></div>
+                    Cadastrando...
+                  </span>
+                ) : (
+                  'Cadastrar Produto'
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
