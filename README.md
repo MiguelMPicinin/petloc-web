@@ -2,6 +2,8 @@ Criar .env.local para conectar com o firebase
 
 estrutura:
 //dados puramente ficticios
+
+
 NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyBRI2qFIsdACk8akfsxIa3_IOLOneh0FC8
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=pet-loc-novo.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=pet-loc-novo
