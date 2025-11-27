@@ -14,7 +14,7 @@ interface User {
 }
 
 export default function AdminUsersPage() {
-  const { user, userRole } = useAuth();
+  const { user, userRole, signOut } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +55,13 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleLogout = async () => {
+    if (confirm('Tem certeza que deseja sair?')) {
+      await signOut();
+      router.push('/login');
+    }
+  };
+
   const filteredUsers = users.filter(user =>
     user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -66,9 +73,9 @@ export default function AdminUsersPage() {
 
   return (
     <div className="min-h-screen bg-background-color p-4">
-      {/* Header */}
+      {/* Header com Navegação */}
       <header className="card mb-6">
-        <div className="flex-between">
+        <div className="flex-between mb-4">
           <div>
             <h1 className="text-2xl font-bold text-primary-color">
               👥 Administração de Usuários
@@ -77,13 +84,43 @@ export default function AdminUsersPage() {
               Gerencie permissões e acesso dos usuários
             </p>
           </div>
-          <button
-            onClick={() => router.push('/home')}
-            className="btn btn-primary"
-          >
-            Voltar ao App
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => router.push('/home')}
+              className="btn btn-primary"
+            >
+              Voltar ao App
+            </button>
+            <button
+              onClick={handleLogout}
+              className="btn btn-error"
+            >
+              🚪 Sair
+            </button>
+          </div>
         </div>
+
+        {/* Navegação entre Telas Admin */}
+        <nav className="flex space-x-2 border-t pt-4 mt-4">
+          <button
+            onClick={() => router.push('/admin/users')}
+            className="px-4 py-2 bg-primary-color text-on-primary rounded-full font-medium transition-colors flex items-center"
+          >
+            👥 Usuários
+          </button>
+          <button
+            onClick={() => router.push('/admin/missing-pets')}
+            className="px-4 py-2 bg-surface-color text-on-surface border border-gray-300 rounded-full font-medium transition-colors hover:border-primary-color flex items-center"
+          >
+            🐕 Pets Desaparecidos
+          </button>
+          <button
+            onClick={() => router.push('/admin/blog-chat')}
+            className="px-4 py-2 bg-surface-color text-on-surface border border-gray-300 rounded-full font-medium transition-colors hover:border-primary-color flex items-center"
+          >
+            💬 Blog/Chat
+          </button>
+        </nav>
       </header>
 
       {/* Barra de Pesquisa */}

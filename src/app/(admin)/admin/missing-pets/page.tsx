@@ -2,7 +2,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { collection, getDocs, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase/config';
 
 interface Desaparecido {
@@ -18,7 +18,7 @@ interface Desaparecido {
 }
 
 export default function AdminMissingPetsPage() {
-  const { user, userRole } = useAuth();
+  const { user, userRole, signOut } = useAuth();
   const router = useRouter();
   const [desaparecidos, setDesaparecidos] = useState<Desaparecido[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,17 +37,26 @@ export default function AdminMissingPetsPage() {
       const desaparecidosSnapshot = await getDocs(collection(db, 'desaparecidos'));
       const desaparecidosData: Desaparecido[] = [];
       
-      for (const doc of desaparecidosSnapshot.docs) {
-        const data = doc.data() as Desaparecido;
-        // Buscar email do usuário
-        const userDoc = await getDocs(doc(db, 'users', data.userId));
-        const userData = userDoc.data();
+      for (const desaparecidoDoc of desaparecidosSnapshot.docs) {
+        const data = desaparecidoDoc.data() as Desaparecido;
         
-        desaparecidosData.push({
-          ...data,
-          id: doc.id,
-          userEmail: userData?.email || 'Email não encontrado'
-        });
+        try {
+          const userDocRef = doc(db, 'users', data.userId);
+          const userDocSnap = await getDoc(userDocRef);
+          const userData = userDocSnap.data();
+          
+          desaparecidosData.push({
+            ...data,
+            id: desaparecidoDoc.id,
+            userEmail: userData?.email || 'Email não encontrado'
+          });
+        } catch (userError) {
+          desaparecidosData.push({
+            ...data,
+            id: desaparecidoDoc.id,
+            userEmail: 'Erro ao carregar email'
+          });
+        }
       }
       
       setDesaparecidos(desaparecidosData);
@@ -81,6 +90,13 @@ export default function AdminMissingPetsPage() {
     }
   };
 
+  const handleLogout = async () => {
+    if (confirm('Tem certeza que deseja sair?')) {
+      await signOut();
+      router.push('/login');
+    }
+  };
+
   const filteredDesaparecidos = desaparecidos.filter(desaparecido => {
     if (filtro === 'ativos') return !desaparecido.encontrado;
     if (filtro === 'encontrados') return desaparecido.encontrado;
@@ -93,8 +109,9 @@ export default function AdminMissingPetsPage() {
 
   return (
     <div className="min-h-screen bg-background-color p-4">
+      {/* Header com Navegação */}
       <header className="card mb-6">
-        <div className="flex-between">
+        <div className="flex-between mb-4">
           <div>
             <h1 className="text-2xl font-bold text-primary-color">
               🐕 Administração de Pets Desaparecidos
@@ -103,13 +120,43 @@ export default function AdminMissingPetsPage() {
               Gerencie registros de pets desaparecidos
             </p>
           </div>
-          <button
-            onClick={() => router.push('/home')}
-            className="btn btn-primary"
-          >
-            Voltar ao App
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => router.push('/home')}
+              className="btn btn-primary"
+            >
+              Voltar ao App
+            </button>
+            <button
+              onClick={handleLogout}
+              className="btn btn-error"
+            >
+              🚪 Sair
+            </button>
+          </div>
         </div>
+
+        {/* Navegação entre Telas Admin */}
+        <nav className="flex space-x-2 border-t pt-4 mt-4">
+          <button
+            onClick={() => router.push('/admin/users')}
+            className="px-4 py-2 bg-surface-color text-on-surface border border-gray-300 rounded-full font-medium transition-colors hover:border-primary-color flex items-center"
+          >
+            👥 Usuários
+          </button>
+          <button
+            onClick={() => router.push('/admin/missing-pets')}
+            className="px-4 py-2 bg-primary-color text-on-primary rounded-full font-medium transition-colors flex items-center"
+          >
+            🐕 Pets Desaparecidos
+          </button>
+          <button
+            onClick={() => router.push('/admin/blog-chat')}
+            className="px-4 py-2 bg-surface-color text-on-surface border border-gray-300 rounded-full font-medium transition-colors hover:border-primary-color flex items-center"
+          >
+            💬 Blog/Chat
+          </button>
+        </nav>
       </header>
 
       {/* Filtros */}

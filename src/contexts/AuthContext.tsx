@@ -5,75 +5,111 @@ import {
   onAuthStateChanged, 
   signOut as firebaseSignOut 
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase/config';
 
 interface AuthContextType {
   user: User | null;
   userRole: 'user' | 'admin' | null;
+  userData: any | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  refreshUserData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({ 
   user: null, 
   userRole: null, 
+  userData: null,
   loading: true,
-  signOut: async () => {}
+  signOut: async () => {},
+  refreshUserData: async () => {}
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<'user' | 'admin' | null>(null);
+  const [userData, setUserData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Buscar usuário no Firestore por EMAIL
+  const fetchUserByEmail = async (email: string) => {
+    try {
+      console.log('🔍 Buscando usuário no Firestore por email:', email);
+      
+      const usersQuery = query(
+        collection(db, 'users'), 
+        where('email', '==', email)
+      );
+      
+      const querySnapshot = await getDocs(usersQuery);
+      
+      if (!querySnapshot.empty) {
+        // Encontrou usuário pelo email
+        const userDoc = querySnapshot.docs[0];
+        const userData = userDoc.data();
+        
+        console.log('✅ Usuário encontrado no Firestore:', userData);
+        
+        setUserData(userData);
+        setUserRole(userData.role || 'user');
+        return userData;
+      } else {
+        // Não encontrou - criar novo usuário
+        console.log('📝 Criando novo usuário no Firestore...');
+        
+        const newUserData = {
+          id: user?.uid || '',
+          nome: user?.displayName || 'Usuário',
+          email: email,
+          role: 'user', // Padrão é user
+          criadoEm: new Date(),
+          atualizadoEm: new Date(),
+        };
+        
+        // Se temos um user com UID, usar o UID como ID do documento
+        if (user?.uid) {
+          await setDoc(doc(db, 'users', user.uid), newUserData);
+        } else {
+          // Se não tem UID, criar com ID automático
+          const docRef = await setDoc(doc(collection(db, 'users')), newUserData);
+        }
+        
+        setUserData(newUserData);
+        setUserRole('user');
+        return newUserData;
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar/criar usuário no Firestore:', error);
+      setUserRole('user');
+      return null;
+    }
+  };
+
+  const refreshUserData = async () => {
+    if (user?.email) {
+      await fetchUserByEmail(user.email);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
+      console.log('🔐 Estado de autenticação alterado:', user ? user.email : 'Nenhum usuário');
+      setLoading(true);
+      
+      if (user && user.email) {
         setUser(user);
-        
-        // Buscar role do usuário no Firestore
-        try {
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setUserRole(userData.role || 'user');
-          } else {
-            // Criar usuário no Firestore se não existir
-            try {
-              await setDoc(doc(db, 'users', user.uid), {
-                id: user.uid,
-                nome: user.displayName || 'Usuário',
-                email: user.email,
-                role: 'user',
-                criadoEm: new Date(),
-                atualizadoEm: new Date(),
-              });
-              setUserRole('user');
-            } catch (createError) {
-              console.error('Erro ao criar usuário no Firestore:', createError);
-              setUserRole('user');
-            }
-          }
-        } catch (error) {
-          console.error('Erro ao buscar dados do usuário:', error);
-          setUserRole('user');
-        }
+        await fetchUserByEmail(user.email);
       } else {
         setUser(null);
         setUserRole(null);
+        setUserData(null);
       }
       
       setLoading(false);
     });
 
-    return () => {
-      try {
-        unsubscribe();
-      } catch (error) {
-        console.error('Erro ao cancelar auth observer:', error);
-      }
-    };
+    return () => unsubscribe();
   }, []);
 
   const signOut = async () => {
@@ -81,14 +117,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await firebaseSignOut(auth);
       setUser(null);
       setUserRole(null);
+      setUserData(null);
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
       throw error;
     }
   };
 
+  const value = {
+    user,
+    userRole,
+    userData,
+    loading,
+    signOut,
+    refreshUserData
+  };
+
+  console.log('🎯 AuthContext atualizado:', { 
+    user: user?.email, 
+    userRole, 
+    loading 
+  });
+
   return (
-    <AuthContext.Provider value={{ user, userRole, loading, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

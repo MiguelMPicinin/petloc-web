@@ -15,10 +15,23 @@ interface Pet {
 }
 
 export default function HomePage() {
-  const { user, userRole, loading: authLoading, signOut } = useAuth();
+  const { user, userRole, userData, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
   const [pets, setPets] = useState<Pet[]>([]);
   const [petsLoading, setPetsLoading] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
+
+  // 🔄 REDIRECIONAMENTO AUTOMÁTICO PARA ADMIN
+  useEffect(() => {
+    if (!authLoading && userRole === 'admin') {
+      console.log('🔄 Usuário é admin, redirecionando para painel administrativo...');
+      setRedirecting(true);
+      // Redireciona para a primeira página do admin
+      setTimeout(() => {
+        router.push('/admin/users');
+      }, 500);
+    }
+  }, [userRole, authLoading, router]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -26,7 +39,7 @@ export default function HomePage() {
       return;
     }
 
-    if (user) {
+    if (user && userRole !== 'admin') { // Só carrega pets se não for admin (pois será redirecionado)
       const q = query(
         collection(db, 'pets'),
         where('userId', '==', user.uid)
@@ -43,7 +56,7 @@ export default function HomePage() {
 
       return () => unsubscribe();
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, userRole]);
 
   const handleLogout = async () => {
     if (confirm('Tem certeza que deseja sair?')) {
@@ -85,12 +98,43 @@ export default function HomePage() {
     { title: 'Pets Desaparecidos', icon: '🐕', section: 'missing-pets' },
   ];
 
+  // 🔄 Tela de carregamento durante redirecionamento
+  if (redirecting) {
+    return (
+      <div className="min-h-screen bg-background-color flex-center">
+        <div className="text-center">
+          <div className="loading-spinner-primary mb-4"></div>
+          <p className="text-on-surface">Redirecionando para o painel administrativo...</p>
+          <p className="text-sm text-gray-500 mt-2">Usuário admin detectado</p>
+        </div>
+      </div>
+    );
+  }
+
   if (authLoading) {
     return (
-      <div className="min-h-screen flex-center">
+      <div className="min-h-screen bg-background-color flex-center">
         <div className="text-center">
-          <div className="loading-spinner"></div>
-          <p>Carregando...</p>
+          <div className="loading-spinner-primary"></div>
+          <p className="text-on-surface mt-2">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 🎯 VERIFICAÇÃO DE ADMIN (backup caso o redirecionamento falhe)
+  if (userRole === 'admin') {
+    return (
+      <div className="min-h-screen bg-background-color flex-center">
+        <div className="text-center">
+          <div className="loading-spinner-primary mb-4"></div>
+          <p className="text-on-surface">Redirecionando para o painel administrativo...</p>
+          <button 
+            onClick={() => router.push('/admin/users')}
+            className="btn btn-primary mt-4"
+          >
+            Clique aqui se não redirecionar automaticamente
+          </button>
         </div>
       </div>
     );
@@ -105,12 +149,27 @@ export default function HomePage() {
             <span>🐾</span>
             <span>PetLoc</span>
           </div>
-          <button
-            onClick={handleLogout}
-            className="btn btn-ghost text-on-primary"
-          >
-            Sair
-          </button>
+          <div className="flex items-center space-x-3">
+            {/* Indicador de Status */}
+            <div className="hidden sm:flex items-center space-x-2">
+              <span className="text-sm text-blue-100">
+                {user?.email}
+              </span>
+              <span className={`px-2 py-1 rounded-full text-xs ${
+                userRole === 'admin' 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-blue-200 text-blue-800'
+              }`}>
+                {userRole === 'admin' ? 'ADMIN' : 'USUÁRIO'}
+              </span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="btn btn-ghost text-on-primary"
+            >
+              Sair
+            </button>
+          </div>
         </div>
       </header>
 
@@ -118,7 +177,9 @@ export default function HomePage() {
         {/* Seção de Boas-vindas */}
         <section className="mb-6">
           <div className="card text-center">
-            <h2 className="text-2xl font-bold mb-2">Bem-vindo ao PetLoc!</h2>
+            <h2 className="text-2xl font-bold mb-2">
+              Bem-vindo ao PetLoc, {user?.displayName || 'Amigo'}!
+            </h2>
             <p className="text-on-surface">Cuidando dos seus pets com amor e tecnologia</p>
           </div>
         </section>
@@ -156,9 +217,9 @@ export default function HomePage() {
                 <div 
                   key={pet.id}
                   onClick={() => router.push(`/pets/editar/${pet.id}`)}
-                  className="card text-center cursor-pointer hover-lift"
+                  className="card text-center cursor-pointer hover-lift pet-card-small"
                 >
-                  <div className="w-16 h-16 rounded-full bg-gray-100 flex-center mx-auto mb-2 overflow-hidden">
+                  <div className="pet-avatar-small">
                     {pet.imagemBase64 ? (
                       <img 
                         src={`data:image/jpeg;base64,${pet.imagemBase64}`}
@@ -196,9 +257,19 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Seção Admin */}
+        {/* Seção Admin (apenas se for admin - backup) */}
         {userRole === 'admin' && (
           <section className="mb-6">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center">
+                <span className="text-yellow-600 mr-2">👑</span>
+                <div>
+                  <p className="font-semibold text-yellow-800">Modo Administrador Ativo</p>
+                  <p className="text-yellow-600 text-sm">Você tem acesso ao painel administrativo</p>
+                </div>
+              </div>
+            </div>
+
             <h3 className="text-lg font-semibold mb-4">Painel Administrativo</h3>
             <div className="grid grid-cols-2 gap-4">
               {adminFeatures.map((item, index) => (
