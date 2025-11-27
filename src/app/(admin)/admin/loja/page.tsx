@@ -2,90 +2,80 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { collection, getDocs, updateDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../../../lib/firebase/config';
 
-interface Desaparecido {
+interface Produto {
   id: string;
   nome: string;
   descricao: string;
+  preco: string;
   contato: string;
   imagemBase64?: string;
+  estoque?: number;
+  categoria: string;
   userId: string;
-  encontrado: boolean;
+  ativo: boolean;
   criadoEm: any;
   userEmail?: string;
 }
 
-export default function AdminMissingPetsPage() {
+export default function AdminLojaPage() {
   const { user, userRole, signOut } = useAuth();
   const router = useRouter();
-  const [desaparecidos, setDesaparecidos] = useState<Desaparecido[]>([]);
+  const [produtos, setProdutos] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filtro, setFiltro] = useState<'todos' | 'ativos' | 'encontrados'>('todos');
+  const [filtro, setFiltro] = useState<'todos' | 'ativos' | 'inativos'>('todos');
 
   useEffect(() => {
     if (!user || userRole !== 'admin') {
+      router.push('/login');
       return;
     }
-    loadDesaparecidos();
-  }, [user, userRole]);
+    loadProdutos();
+  }, [user, userRole, router]);
 
-  const loadDesaparecidos = async () => {
+  const loadProdutos = async () => {
     try {
-      const desaparecidosSnapshot = await getDocs(collection(db, 'desaparecidos'));
-      const desaparecidosData: Desaparecido[] = [];
+      const produtosSnapshot = await getDocs(collection(db, 'produtos_loja'));
+      const produtosData: Produto[] = [];
       
-      for (const desaparecidoDoc of desaparecidosSnapshot.docs) {
-        const data = desaparecidoDoc.data() as Desaparecido;
-        
-        try {
-          const userDocRef = doc(db, 'users', data.userId);
-          const userDocSnap = await getDoc(userDocRef);
-          const userData = userDocSnap.data();
-          
-          desaparecidosData.push({
-            ...data,
-            id: desaparecidoDoc.id,
-            userEmail: userData?.email || 'Email não encontrado'
-          });
-        } catch (userError) {
-          desaparecidosData.push({
-            ...data,
-            id: desaparecidoDoc.id,
-            userEmail: 'Erro ao carregar email'
-          });
-        }
+      for (const produtoDoc of produtosSnapshot.docs) {
+        const data = produtoDoc.data() as Produto;
+        produtosData.push({
+          ...data,
+          id: produtoDoc.id,
+        });
       }
       
-      setDesaparecidos(desaparecidosData);
+      setProdutos(produtosData);
     } catch (error: any) {
-      setError('Erro ao carregar desaparecidos: ' + error.message);
+      setError('Erro ao carregar produtos: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleEncontrado = async (id: string, encontrado: boolean) => {
+  const toggleProdutoAtivo = async (produtoId: string, ativo: boolean) => {
     try {
-      await updateDoc(doc(db, 'desaparecidos', id), {
-        encontrado: !encontrado,
+      await updateDoc(doc(db, 'produtos_loja', produtoId), {
+        ativo: !ativo,
         atualizadoEm: new Date(),
       });
-      await loadDesaparecidos();
+      await loadProdutos();
     } catch (error: any) {
-      setError('Erro ao atualizar registro: ' + error.message);
+      setError('Erro ao atualizar produto: ' + error.message);
     }
   };
 
-  const deletarDesaparecido = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este registro?')) {
+  const deletarProduto = async (produtoId: string) => {
+    if (confirm('Tem certeza que deseja excluir este produto?')) {
       try {
-        await deleteDoc(doc(db, 'desaparecidos', id));
-        await loadDesaparecidos();
+        await deleteDoc(doc(db, 'produtos_loja', produtoId));
+        await loadProdutos();
       } catch (error: any) {
-        setError('Erro ao excluir registro: ' + error.message);
+        setError('Erro ao excluir produto: ' + error.message);
       }
     }
   };
@@ -97,9 +87,9 @@ export default function AdminMissingPetsPage() {
     }
   };
 
-  const filteredDesaparecidos = desaparecidos.filter(desaparecido => {
-    if (filtro === 'ativos') return !desaparecido.encontrado;
-    if (filtro === 'encontrados') return desaparecido.encontrado;
+  const filteredProdutos = produtos.filter(produto => {
+    if (filtro === 'ativos') return produto.ativo;
+    if (filtro === 'inativos') return !produto.ativo;
     return true;
   });
 
@@ -114,18 +104,24 @@ export default function AdminMissingPetsPage() {
         <div className="flex-between mb-4">
           <div>
             <h1 className="text-2xl font-bold text-primary-color">
-              🐕 Administração de Pets Desaparecidos
+              🛍️ Administração da Loja
             </h1>
             <p className="text-on-surface mt-1">
-              Gerencie registros de pets desaparecidos
+              Gerencie produtos da loja
             </p>
           </div>
           <div className="flex space-x-2">
             <button
-              onClick={() => router.push('/home')}
+              onClick={() => router.push('/loja')}
               className="btn btn-primary"
             >
-              Voltar ao App
+              Voltar à Loja
+            </button>
+            <button
+              onClick={() => router.push('/home')}
+              className="btn btn-secondary"
+            >
+              Início
             </button>
             <button
               onClick={handleLogout}
@@ -146,7 +142,7 @@ export default function AdminMissingPetsPage() {
           </button>
           <button
             onClick={() => router.push('/admin/missing-pets')}
-            className="px-4 py-2 bg-primary-color text-on-primary rounded-full font-medium transition-colors"
+            className="px-4 py-2 bg-surface-color text-on-surface border border-gray-300 rounded-full font-medium transition-colors hover:border-primary-color"
           >
             🐕 Pets Desaparecidos
           </button>
@@ -158,7 +154,7 @@ export default function AdminMissingPetsPage() {
           </button>
           <button
             onClick={() => router.push('/admin/loja')}
-            className="px-4 py-2 bg-surface-color text-on-surface border border-gray-300 rounded-full font-medium transition-colors hover:border-primary-color"
+            className="px-4 py-2 bg-primary-color text-on-primary rounded-full font-medium transition-colors"
           >
             🛍️ Loja
           </button>
@@ -169,8 +165,8 @@ export default function AdminMissingPetsPage() {
       <div className="flex space-x-2 mb-6">
         {[
           { key: 'todos', label: 'Todos' },
-          { key: 'ativos', label: 'Desaparecidos' },
-          { key: 'encontrados', label: 'Encontrados' },
+          { key: 'ativos', label: 'Ativos' },
+          { key: 'inativos', label: 'Inativos' },
         ].map((filtroItem) => (
           <button
             key={filtroItem.key}
@@ -193,22 +189,28 @@ export default function AdminMissingPetsPage() {
       )}
 
       {/* Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="card text-center">
-          <div className="text-2xl font-bold text-primary-color">{desaparecidos.length}</div>
-          <div className="text-on-surface">Total de Registros</div>
-        </div>
-        <div className="card text-center">
-          <div className="text-2xl font-bold text-secondary-color">
-            {desaparecidos.filter(d => !d.encontrado).length}
-          </div>
-          <div className="text-on-surface">Desaparecidos</div>
+          <div className="text-2xl font-bold text-primary-color">{produtos.length}</div>
+          <div className="text-on-surface text-sm">Total de Produtos</div>
         </div>
         <div className="card text-center">
           <div className="text-2xl font-bold text-success-color">
-            {desaparecidos.filter(d => d.encontrado).length}
+            {produtos.filter(p => p.ativo).length}
           </div>
-          <div className="text-on-surface">Encontrados</div>
+          <div className="text-on-surface text-sm">Produtos Ativos</div>
+        </div>
+        <div className="card text-center">
+          <div className="text-2xl font-bold text-secondary-color">
+            {produtos.filter(p => !p.ativo).length}
+          </div>
+          <div className="text-on-surface text-sm">Produtos Inativos</div>
+        </div>
+        <div className="card text-center">
+          <div className="text-2xl font-bold text-accent-color">
+            {produtos.filter(p => p.estoque !== undefined && p.estoque <= 0).length}
+          </div>
+          <div className="text-on-surface text-sm">Produtos Esgotados</div>
         </div>
       </div>
 
@@ -216,16 +218,16 @@ export default function AdminMissingPetsPage() {
         <div className="flex-center py-12">
           <div className="loading-spinner-primary"></div>
         </div>
-      ) : filteredDesaparecidos.length === 0 ? (
+      ) : filteredProdutos.length === 0 ? (
         <div className="text-center py-12">
-          <div className="text-6xl mb-4 text-gray-300">🐕</div>
+          <div className="text-6xl mb-4 text-gray-300">🛍️</div>
           <h3 className="text-lg font-semibold text-gray-600 mb-2">
-            Nenhum registro encontrado
+            Nenhum produto encontrado
           </h3>
           <p className="text-gray-500">
             {filtro === 'todos' 
-              ? 'Não há registros de pets desaparecidos'
-              : `Não há registros ${filtro === 'ativos' ? 'desaparecidos' : 'encontrados'}`
+              ? 'Não há produtos cadastrados'
+              : `Não há produtos ${filtro === 'ativos' ? 'ativos' : 'inativos'}`
             }
           </p>
         </div>
@@ -235,86 +237,91 @@ export default function AdminMissingPetsPage() {
             <table className="min-w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pet
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Produto
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Descrição
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Preço
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contato
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Categoria
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Usuário
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Estoque
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Ações
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-surface-color divide-y divide-gray-200">
-                {filteredDesaparecidos.map((desaparecido) => (
-                  <tr key={desaparecido.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                {filteredProdutos.map((produto) => (
+                  <tr key={produto.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 w-10 h-10">
-                          {desaparecido.imagemBase64 ? (
+                          {produto.imagemBase64 ? (
                             <img
-                              src={`data:image/jpeg;base64,${desaparecido.imagemBase64}`}
-                              alt={desaparecido.nome}
-                              className="w-10 h-10 rounded-full object-cover"
+                              src={`data:image/jpeg;base64,${produto.imagemBase64}`}
+                              alt={produto.nome}
+                              className="w-10 h-10 rounded object-cover"
                             />
                           ) : (
-                            <div className="w-10 h-10 bg-gray-200 rounded-full flex-center">
-                              <span className="text-gray-400">🐾</span>
+                            <div className="w-10 h-10 bg-gray-200 rounded flex-center">
+                              <span className="text-gray-400">🛍️</span>
                             </div>
                           )}
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-on-surface">
-                            {desaparecido.nome}
+                          <div className="text-sm font-medium text-on-surface max-w-xs truncate">
+                            {produto.nome}
+                          </div>
+                          <div className="text-sm text-gray-500 max-w-xs truncate">
+                            {produto.descricao}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-on-surface max-w-xs truncate">
-                        {desaparecido.descricao}
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-on-surface">
+                        R$ {parseFloat(produto.preco).toFixed(2)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-on-surface">{desaparecido.contato}</div>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-on-surface">{produto.categoria}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-on-surface">{desaparecido.userEmail}</div>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-on-surface">
+                        {produto.estoque !== undefined ? produto.estoque : 'N/A'}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <span
                         className={`badge ${
-                          desaparecido.encontrado
+                          produto.ativo
                             ? 'badge-success'
                             : 'badge-error'
                         }`}
                       >
-                        {desaparecido.encontrado ? 'Encontrado' : 'Desaparecido'}
+                        {produto.ativo ? 'Ativo' : 'Inativo'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                       <button
-                        onClick={() => toggleEncontrado(desaparecido.id, desaparecido.encontrado)}
+                        onClick={() => toggleProdutoAtivo(produto.id, produto.ativo)}
                         className={`btn btn-sm ${
-                          desaparecido.encontrado
+                          produto.ativo
                             ? 'btn-secondary'
                             : 'btn-success'
                         } mr-2`}
                       >
-                        {desaparecido.encontrado ? 'Marcar como Desaparecido' : 'Marcar como Encontrado'}
+                        {produto.ativo ? 'Desativar' : 'Ativar'}
                       </button>
                       <button
-                        onClick={() => deletarDesaparecido(desaparecido.id)}
+                        onClick={() => deletarProduto(produto.id)}
                         className="btn btn-sm btn-error"
                       >
                         Excluir

@@ -212,15 +212,16 @@ input, textarea, select {
   font-size: 0.75rem;
 }
 
-/* Cards - Estilo mais quadrado e moderno */
+/* Cards - Estilo REDUZIDO e moderno */
 .card {
   background-color: var(--surface-color);
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
   transition: all 0.2s ease;
   border: 1px solid #e2e8f0;
   position: relative;
+  overflow: hidden;
 }
 
 .card::after {
@@ -231,7 +232,7 @@ input, textarea, select {
   right: 0;
   height: 3px;
   background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
   opacity: 0;
   transition: opacity 0.2s ease;
 }
@@ -245,16 +246,20 @@ input, textarea, select {
   transform: translateY(-2px);
 }
 
+.card-sm {
+  padding: var(--spacing-sm);
+}
+
 .card-flat {
   background-color: var(--surface-color);
   border-radius: var(--border-radius);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
   border: 1px solid #e2e8f0;
 }
 
 /* Formulários - Estilo moderno */
 .form-group {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
 }
 
 .form-label {
@@ -304,7 +309,7 @@ input, textarea, select {
   padding-right: 2.5rem;
 }
 
-/* Header - AZUL */
+/* Header - NOVO LAYOUT ESPAÇADO */
 .header {
   background-color: var(--primary-color);
   color: var(--on-primary);
@@ -325,13 +330,49 @@ input, textarea, select {
   padding: 0 var(--spacing-md);
 }
 
-.header-brand {
+.header-left {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   font-weight: 700;
   font-size: 1.25rem;
   color: var(--on-primary);
+  flex: 1;
+}
+
+.header-center {
+  flex: 1;
+  text-align: center;
+}
+
+.header-center h1 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--on-primary);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.header-action-btn {
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius);
+  transition: background-color 0.2s ease;
+  color: var(--on-primary);
+}
+
+.header-action-btn:hover {
+  background-color: var(--primary-dark);
 }
 
 /* Navigation - AZUL - REDUZIDO */
@@ -413,11 +454,11 @@ input, textarea, select {
   font-weight: 600;
 }
 
-/* Footer - AZUL - CORRIGIDO */
+/* Footer - NOVO - FIXO NAS TELAS SOLICITADAS */
 .footer {
   background-color: var(--primary-color);
   color: var(--on-primary);
-  padding: var(--spacing-lg) 0;
+  padding: var(--spacing-md) 0;
   margin-top: auto;
   position: relative;
   z-index: 40;
@@ -711,6 +752,15 @@ input, textarea, select {
     flex-wrap: wrap;
     justify-content: center;
   }
+
+  .header-center {
+    display: none;
+  }
+
+  .header-left,
+  .header-right {
+    flex: none;
+  }
 }
 
 @media (max-width: 768px) {
@@ -830,10 +880,10 @@ input, textarea, select {
   background-color: var(--background-color);
 }
 
-/* Card de pet REDUZIDO em 20px (mais 10px) */
+/* Card de pet REDUZIDO */
 .pet-avatar {
-  width: 44px; /* Reduzido de 54px para 44px (total 20px de redução) */
-  height: 44px; /* Reduzido de 54px para 44px (total 20px de redução) */
+  width: 44px;
+  height: 44px;
   border-radius: var(--border-radius);
   display: flex;
   justify-content: center;
@@ -841,6 +891,22 @@ input, textarea, select {
   overflow: hidden;
   margin: 0 auto;
   border: 2px solid #e2e8f0;
+}
+
+.pet-avatar-small {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  margin: 0 auto var(--spacing-sm);
+  border: 2px solid #e2e8f0;
+}
+
+.pet-card-small {
+  padding: var(--spacing-sm);
 }
 
 .feature-icon {
@@ -1566,4 +1632,36 @@ input, textarea, select {
 .main-with-footer {
   min-height: calc(100vh - 80px);
   padding-bottom: 80px;
+}
+
+/* Utilitários para line clamp */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Utilitário para scrollbar hide */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

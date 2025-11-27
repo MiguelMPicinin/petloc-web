@@ -156,7 +156,7 @@ export default function AdminBlogChatPage() {
         </div>
 
         {/* Navegação entre Telas Admin */}
-        <nav className="flex space-x-2 border-t pt-4 mt-4">
+        <nav className="flex space-x-2 border-t pt-4 mt-4 flex-wrap gap-2">
           <button
             onClick={() => router.push('/admin/users')}
             className="px-4 py-2 bg-surface-color text-on-surface border border-gray-300 rounded-full font-medium transition-colors hover:border-primary-color flex items-center"
@@ -174,6 +174,12 @@ export default function AdminBlogChatPage() {
             className="px-4 py-2 bg-primary-color text-on-primary rounded-full font-medium transition-colors flex items-center"
           >
             💬 Blog/Chat
+          </button>
+          <button
+            onClick={() => router.push('/admin/loja')}
+            className="px-4 py-2 bg-surface-color text-on-surface border border-gray-300 rounded-full font-medium transition-colors hover:border-primary-color flex items-center"
+          >
+            🛍️ Loja
           </button>
         </nav>
       </header>

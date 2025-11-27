@@ -3,7 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../../lib/firebase/config';
+import { db } from '@/lib/firebase/config';
+import Footer from '../../../components/Footer';
 
 interface Pet {
   id: string;
@@ -29,45 +30,36 @@ export default function PetsPage() {
       return;
     }
 
-    try {
-      const q = query(
+    const unsubscribe = onSnapshot(
+      query(
         collection(db, 'pets'),
         where('userId', '==', user.uid)
-      );
-      
-      const unsubscribe = onSnapshot(q, 
-        (snapshot) => {
-          const petsData: Pet[] = [];
-          snapshot.forEach((doc) => {
-            petsData.push({ id: doc.id, ...doc.data() } as Pet);
-          });
-          setPets(petsData);
-          setLoading(false);
-          setError('');
-        },
-        (error) => {
-          console.error('Erro Firestore:', error);
-          if (error.code === 'permission-denied') {
-            setError('Permissão negada. Verifique as regras de segurança do Firestore.');
-          } else {
-            setError('Erro ao carregar pets: ' + error.message);
-          }
-          setLoading(false);
+      ),
+      (snapshot) => {
+        const petsData: Pet[] = [];
+        snapshot.forEach((doc) => {
+          petsData.push({ id: doc.id, ...doc.data() } as Pet);
+        });
+        // Ordenar por data de criação (mais recentes primeiro)
+        petsData.sort((a, b) => 
+          new Date(b.criadoEm?.toDate()).getTime() - new Date(a.criadoEm?.toDate()).getTime()
+        );
+        setPets(petsData);
+        setLoading(false);
+        setError('');
+      },
+      (error) => {
+        console.error('Erro Firestore:', error);
+        if (error.code === 'permission-denied') {
+          setError('Permissão negada. Verifique as regras de segurança do Firestore.');
+        } else {
+          setError('Erro ao carregar pets: ' + error.message);
         }
-      );
+        setLoading(false);
+      }
+    );
 
-      return () => {
-        try {
-          unsubscribe();
-        } catch (unsubError) {
-          console.error('Erro ao cancelar subscription:', unsubError);
-        }
-      };
-    } catch (error: any) {
-      console.error('Erro na configuração da query:', error);
-      setError('Erro na configuração: ' + error.message);
-      setLoading(false);
-    }
+    return () => unsubscribe();
   }, [user, router]);
 
   const handleDeletePet = async (petId: string, petName: string) => {
@@ -103,7 +95,7 @@ export default function PetsPage() {
             </button>
             <div>
               <h1 className="text-xl font-bold">Meus Pets</h1>
-              <p className="text-xs text-blue-100">{pets.length} pets cadastrados</p>
+              <p className="text-xs text-blue-100">Gerencie seus pets cadastrados</p>
             </div>
           </div>
           <button
@@ -164,63 +156,64 @@ export default function PetsPage() {
             )}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {filteredPets.map((pet) => (
-              <div key={pet.id} className="card cursor-pointer">
+              <div 
+                key={pet.id} 
+                className="card overflow-hidden hover-lift border-gray-200"
+              >
+                {/* Imagem */}
+                <div className="relative">
+                  {pet.imagemBase64 ? (
+                    <img
+                      src={`data:image/jpeg;base64,${pet.imagemBase64}`}
+                      alt={pet.nome}
+                      className="w-full h-48 object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 flex-center">
+                      <span className="text-4xl text-gray-400">🐾</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Informações */}
                 <div className="p-4">
-                  <div className="flex items-start space-x-4">
-                    {/* Imagem do Pet */}
-                    <div className="flex-shrink-0">
-                      <div className="w-20 h-20 rounded-lg bg-gray-100 overflow-hidden flex-center">
-                        {pet.imagemBase64 ? (
-                          <img
-                            src={`data:image/jpeg;base64,${pet.imagemBase64}`}
-                            alt={pet.nome}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-2xl text-gray-400">🐾</span>
-                        )}
-                      </div>
+                  <div className="flex-between mb-3">
+                    <h3 className="text-xl font-semibold text-on-surface">
+                      {pet.nome}
+                    </h3>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => router.push(`/pets/editar/${pet.id}`)}
+                        className="text-primary-color hover:text-primary-dark p-2 rounded transition-colors"
+                        title="Editar pet"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => handleDeletePet(pet.id, pet.nome)}
+                        className="text-error-color hover:text-red-800 p-2 rounded transition-colors"
+                        title="Excluir pet"
+                      >
+                        🗑️
+                      </button>
                     </div>
+                  </div>
+                  
+                  <p className="text-on-surface mb-4 leading-relaxed">
+                    {pet.descricao}
+                  </p>
+                  
+                  <div className="flex items-center text-on-surface">
+                    <span className="mr-2">📞</span>
+                    <span className="font-medium">{pet.contato}</span>
+                  </div>
 
-                    {/* Informações do Pet */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex-between mb-2">
-                        <h3 className="text-lg font-semibold text-on-surface truncate">
-                          {pet.nome}
-                        </h3>
-                        <div className="flex space-x-1">
-                          <button
-                            onClick={() => router.push(`/pets/editar/${pet.id}`)}
-                            className="text-primary-color hover:text-primary-dark p-1 rounded transition-colors"
-                            title="Editar pet"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={() => handleDeletePet(pet.id, pet.nome)}
-                            className="text-error-color hover:text-red-800 p-1 rounded transition-colors"
-                            title="Excluir pet"
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <p className="text-on-surface text-sm mb-2 line-clamp-2">
-                        {pet.descricao}
-                      </p>
-                      
-                      <div className="flex items-center text-sm text-gray-500">
-                        <span className="mr-2">📞</span>
-                        <span>{pet.contato}</span>
-                      </div>
-
-                      <div className="mt-2 text-xs text-gray-400">
-                        Cadastrado em {pet.criadoEm?.toDate().toLocaleDateString('pt-BR')}
-                      </div>
-                    </div>
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <p className="text-xs text-gray-500">
+                      Criado em {pet.criadoEm?.toDate().toLocaleDateString('pt-BR')}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -236,6 +229,38 @@ export default function PetsPage() {
       >
         +
       </button>
+
+      {/* Navigation */}
+      <nav className="nav-bar">
+        <button 
+          onClick={() => router.push('/home')}
+          className="nav-item"
+        >
+          <span className="nav-icon">🏠</span>
+          <span className="nav-label">Início</span>
+        </button>
+        <button 
+          onClick={() => router.push('/pets')}
+          className="nav-item active"
+        >
+          <span className="nav-icon">🐾</span>
+          <span className="nav-label">Pets</span>
+        </button>
+        <button 
+          onClick={() => router.push('/loja')}
+          className="nav-item"
+        >
+          <span className="nav-icon">🛍️</span>
+          <span className="nav-label">Loja</span>
+        </button>
+        <button 
+          onClick={() => router.push('/community')}
+          className="nav-item"
+        >
+          <span className="nav-icon">👥</span>
+          <span className="nav-label">Comunidade</span>
+        </button>
+      </nav>
     </div>
   );
 }

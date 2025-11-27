@@ -14,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body>
+      <body className="app-body">
         <AuthProvider>
           {children}
         </AuthProvider>

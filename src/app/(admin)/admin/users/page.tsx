@@ -49,7 +49,7 @@ export default function AdminUsersPage() {
         role: newRole,
         atualizadoEm: new Date()
       });
-      await loadUsers(); // Recarregar lista
+      await loadUsers();
     } catch (error: any) {
       setError('Erro ao atualizar usuário: ' + error.message);
     }
@@ -101,24 +101,30 @@ export default function AdminUsersPage() {
         </div>
 
         {/* Navegação entre Telas Admin */}
-        <nav className="flex space-x-2 border-t pt-4 mt-4">
+        <nav className="flex space-x-2 border-t pt-4 mt-4 flex-wrap gap-2">
           <button
             onClick={() => router.push('/admin/users')}
-            className="px-4 py-2 bg-primary-color text-on-primary rounded-full font-medium transition-colors flex items-center"
+            className="px-4 py-2 bg-primary-color text-on-primary rounded-full font-medium transition-colors"
           >
             👥 Usuários
           </button>
           <button
             onClick={() => router.push('/admin/missing-pets')}
-            className="px-4 py-2 bg-surface-color text-on-surface border border-gray-300 rounded-full font-medium transition-colors hover:border-primary-color flex items-center"
+            className="px-4 py-2 bg-surface-color text-on-surface border border-gray-300 rounded-full font-medium transition-colors hover:border-primary-color"
           >
             🐕 Pets Desaparecidos
           </button>
           <button
             onClick={() => router.push('/admin/blog-chat')}
-            className="px-4 py-2 bg-surface-color text-on-surface border border-gray-300 rounded-full font-medium transition-colors hover:border-primary-color flex items-center"
+            className="px-4 py-2 bg-surface-color text-on-surface border border-gray-300 rounded-full font-medium transition-colors hover:border-primary-color"
           >
             💬 Blog/Chat
+          </button>
+          <button
+            onClick={() => router.push('/admin/loja')}
+            className="px-4 py-2 bg-surface-color text-on-surface border border-gray-300 rounded-full font-medium transition-colors hover:border-primary-color"
+          >
+            🛍️ Loja
           </button>
         </nav>
       </header>
