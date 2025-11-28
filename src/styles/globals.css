@@ -1665,3 +1665,51 @@ input, textarea, select {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* ===== NOVAS CLASSES PARA IMAGENS LIMITADAS ===== */
+.img-limitada {
+  max-width: 300px;
+  max-height: 300px;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+}
+
+.img-limitada-contain {
+  max-width: 300px;
+  max-height: 300px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.img-limitada-small {
+  max-width: 80px;
+  max-height: 80px;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+}
+
+.img-limitada-medium {
+  max-width: 150px;
+  max-height: 150px;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+}
+
+/* Ajustes específicos para containers de imagem */
+.imagem-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.imagem-container img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}

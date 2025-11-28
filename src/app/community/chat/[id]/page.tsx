@@ -70,7 +70,6 @@ export default function ChatGroupPage() {
         const groupData = groupDoc.data() as ChatGroup;
         setGroup({ id: groupDoc.id, ...groupData });
 
-        // Adicionar o usuário como membro se ainda não for
         if (!groupData.membros?.includes(user.uid)) {
           await updateDoc(doc(db, 'chat_grupos', groupId), {
             membros: arrayUnion(user.uid),
@@ -98,7 +97,15 @@ export default function ChatGroupPage() {
       (snapshot) => {
         const messagesData: ChatMessage[] = [];
         snapshot.forEach((doc) => {
-          messagesData.push({ id: doc.id, ...doc.data() } as ChatMessage);
+          const data = doc.data();
+          messagesData.push({ 
+            id: doc.id, 
+            texto: data.texto || '',
+            userId: data.userId || data.remetenteId || '',
+            userName: data.userName || data.remetenteNome || 'Usuário',
+            userPhotoURL: data.userPhotoURL || '',
+            timestamp: data.timestamp || data.enviadoEm
+          } as ChatMessage);
         });
         setMessages(messagesData);
       },
@@ -133,15 +140,19 @@ export default function ChatGroupPage() {
     setSending(true);
     setError('');
     try {
-      await addDoc(collection(db, 'chat_grupos', groupId, 'mensagens'), {
+      const mensagemData = {
         texto: newMessage.trim(),
         userId: user.uid,
         userName: user.displayName || 'Usuário',
         userPhotoURL: user.photoURL || '',
         timestamp: serverTimestamp(),
-      });
+        remetenteId: user.uid,
+        remetenteNome: user.displayName || 'Usuário',
+        enviadoEm: serverTimestamp(),
+      };
 
-      // Atualizar última mensagem no grupo
+      await addDoc(collection(db, 'chat_grupos', groupId, 'mensagens'), mensagemData);
+
       await updateDoc(doc(db, 'chat_grupos', groupId), {
         ultimaMensagem: newMessage.trim(),
         ultimaMensagemData: serverTimestamp(),
@@ -149,7 +160,6 @@ export default function ChatGroupPage() {
       });
 
       setNewMessage('');
-      // Focar no textarea após enviar
       setTimeout(() => {
         textareaRef.current?.focus();
       }, 0);
@@ -218,7 +228,6 @@ export default function ChatGroupPage() {
     }
   };
 
-  // Auto-ajustar altura do textarea
   const adjustTextareaHeight = () => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -264,7 +273,6 @@ export default function ChatGroupPage() {
 
   return (
     <div className="chat-main-container">
-      {/* Header Centralizado - Estilo WhatsApp */}
       <header className="chat-header-centered">
         <div className="chat-header-content">
           <button
@@ -295,7 +303,6 @@ export default function ChatGroupPage() {
         </div>
       </header>
 
-      {/* Área de Mensagens Centralizada */}
       <div className="chat-center-panel">
         <div className="chat-messages-scroll">
           {error && (
@@ -317,12 +324,10 @@ export default function ChatGroupPage() {
           ) : (
             Object.entries(groupedMessages).map(([date, dateMessages]) => (
               <div key={date}>
-                {/* Separador de Data */}
                 <div className="date-separator">
                   <span>{date}</span>
                 </div>
 
-                {/* Mensagens do Dia */}
                 {dateMessages.map((message) => (
                   <div
                     key={message.id}
@@ -331,7 +336,6 @@ export default function ChatGroupPage() {
                     } message-animate`}
                   >
                     <div className="max-w-xs lg:max-w-md">
-                      {/* Nome do Remetente (apenas para mensagens de outros) */}
                       {message.userId !== user.uid && (
                         <div className="flex items-center space-x-2 mb-1 ml-1">
                           <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex-center text-white text-xs font-semibold">
@@ -343,7 +347,6 @@ export default function ChatGroupPage() {
                         </div>
                       )}
 
-                      {/* Bolha da Mensagem */}
                       <div
                         className={`px-4 py-3 rounded-2xl shadow-sm ${
                           message.userId === user.uid
@@ -369,11 +372,9 @@ export default function ChatGroupPage() {
           <div ref={messagesEndRef} className="chat-messages-end" />
         </div>
 
-        {/* Input de Mensagem Expandido - Estilo WhatsApp */}
         <div className="chat-input-centered">
           <form onSubmit={handleSendMessage} className="w-full">
             <div className="chat-input-expanded">
-              {/* Botões de Ação */}
               <div className="chat-input-actions">
                 <button
                   type="button"
@@ -396,7 +397,6 @@ export default function ChatGroupPage() {
                 </button>
               </div>
 
-              {/* Campo de Texto Expandido */}
               <textarea
                 ref={textareaRef}
                 value={newMessage}
@@ -408,7 +408,6 @@ export default function ChatGroupPage() {
                 rows={1}
               />
 
-              {/* Botão de Enviar Expandido */}
               <button
                 type="submit"
                 disabled={sending || !newMessage.trim()}

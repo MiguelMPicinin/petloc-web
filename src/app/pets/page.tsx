@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { collection, query, where, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import Footer from '../../../components/Footer';
 
 interface Pet {
   id: string;
@@ -40,7 +39,6 @@ export default function PetsPage() {
         snapshot.forEach((doc) => {
           petsData.push({ id: doc.id, ...doc.data() } as Pet);
         });
-        // Ordenar por data de criação (mais recentes primeiro)
         petsData.sort((a, b) => 
           new Date(b.criadoEm?.toDate()).getTime() - new Date(a.criadoEm?.toDate()).getTime()
         );
@@ -83,10 +81,9 @@ export default function PetsPage() {
 
   return (
     <div className="min-h-screen bg-background-color pb-16">
-      {/* Header */}
       <header className="header">
         <div className="header-content">
-          <div className="flex items-center space-x-3">
+          <div className="header-left">
             <button
               onClick={() => router.push('/home')}
               className="p-2 hover:bg-primary-dark rounded-lg transition-colors"
@@ -108,7 +105,6 @@ export default function PetsPage() {
       </header>
 
       <div className="container">
-        {/* Barra de Pesquisa */}
         <div className="mb-6">
           <div className="relative">
             <input
@@ -132,7 +128,7 @@ export default function PetsPage() {
 
         {loading ? (
           <div className="flex-center py-12">
-            <div className="loading-spinner-primary"></div>
+            <div className="loading-spinner loading-spinner-primary"></div>
           </div>
         ) : filteredPets.length === 0 ? (
           <div className="text-center py-12">
@@ -162,13 +158,12 @@ export default function PetsPage() {
                 key={pet.id} 
                 className="card overflow-hidden hover-lift border-gray-200"
               >
-                {/* Imagem */}
-                <div className="relative">
+                <div className="relative imagem-container">
                   {pet.imagemBase64 ? (
                     <img
                       src={`data:image/jpeg;base64,${pet.imagemBase64}`}
                       alt={pet.nome}
-                      className="w-full h-48 object-cover"
+                      className="img-limitada w-full"
                     />
                   ) : (
                     <div className="w-full h-48 bg-gray-100 flex-center">
@@ -177,7 +172,6 @@ export default function PetsPage() {
                   )}
                 </div>
 
-                {/* Informações */}
                 <div className="p-4">
                   <div className="flex-between mb-3">
                     <h3 className="text-xl font-semibold text-on-surface">
@@ -222,7 +216,6 @@ export default function PetsPage() {
         )}
       </div>
 
-      {/* Botão Flutuante */}
       <button
         onClick={() => router.push('/pets/cadastro')}
         className="fixed bottom-20 right-6 bg-primary-color text-on-primary w-14 h-14 rounded-full shadow-lg flex-center text-2xl hover:bg-primary-dark transition-colors z-10"
@@ -230,7 +223,6 @@ export default function PetsPage() {
         +
       </button>
 
-      {/* Navigation */}
       <nav className="nav-bar">
         <button 
           onClick={() => router.push('/home')}
@@ -245,6 +237,13 @@ export default function PetsPage() {
         >
           <span className="nav-icon">🐾</span>
           <span className="nav-label">Pets</span>
+        </button>
+        <button 
+          onClick={() => router.push('/desaparecidos')}
+          className="nav-item"
+        >
+          <span className="nav-icon">⚠️</span>
+          <span className="nav-label">Desaparecidos</span>
         </button>
         <button 
           onClick={() => router.push('/loja')}

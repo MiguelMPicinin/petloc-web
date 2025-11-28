@@ -37,7 +37,6 @@ export default function DesaparecidosPage() {
         snapshot.forEach((doc) => {
           desaparecidosData.push({ id: doc.id, ...doc.data() } as Desaparecido);
         });
-        // Ordenar por data de criação (mais recentes primeiro)
         desaparecidosData.sort((a, b) => 
           new Date(b.criadoEm?.toDate()).getTime() - new Date(a.criadoEm?.toDate()).getTime()
         );
@@ -76,10 +75,9 @@ export default function DesaparecidosPage() {
 
   return (
     <div className="min-h-screen bg-background-color pb-16">
-      {/* Header */}
       <header className="header">
         <div className="header-content">
-          <div className="flex items-center space-x-3">
+          <div className="header-left">
             <button
               onClick={() => router.push('/home')}
               className="p-2 hover:bg-primary-dark rounded-lg transition-colors"
@@ -101,7 +99,6 @@ export default function DesaparecidosPage() {
       </header>
 
       <div className="container">
-        {/* Filtros */}
         <div className="flex space-x-2 mb-6 overflow-x-auto pb-2">
           {[
             { key: 'todos', label: 'Todos' },
@@ -162,13 +159,12 @@ export default function DesaparecidosPage() {
                   desaparecido.encontrado ? 'border-green-200' : 'border-red-200'
                 }`}
               >
-                {/* Imagem */}
-                <div className="relative">
+                <div className="relative imagem-container">
                   {desaparecido.imagemBase64 ? (
                     <img
                       src={`data:image/jpeg;base64,${desaparecido.imagemBase64}`}
                       alt={desaparecido.nome}
-                      className="w-full h-48 object-cover"
+                      className="img-limitada w-full"
                     />
                   ) : (
                     <div className="w-full h-48 bg-gray-100 flex-center">
@@ -176,7 +172,6 @@ export default function DesaparecidosPage() {
                     </div>
                   )}
                   
-                  {/* Status */}
                   <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-sm font-semibold ${
                     desaparecido.encontrado 
                       ? 'bg-success-color text-on-primary' 
@@ -186,7 +181,6 @@ export default function DesaparecidosPage() {
                   </div>
                 </div>
 
-                {/* Informações */}
                 <div className="p-4">
                   <div className="flex-between mb-3">
                     <h3 className="text-xl font-semibold text-on-surface">
@@ -225,7 +219,6 @@ export default function DesaparecidosPage() {
         )}
       </div>
 
-      {/* Botão Flutuante */}
       <button
         onClick={() => router.push('/desaparecidos/criar')}
         className="fixed bottom-20 right-6 bg-primary-color text-on-primary w-14 h-14 rounded-full shadow-lg flex-center text-2xl hover:bg-primary-dark transition-colors z-10"
@@ -233,7 +226,6 @@ export default function DesaparecidosPage() {
         +
       </button>
 
-      {/* Navigation */}
       <nav className="nav-bar">
         <button 
           onClick={() => router.push('/home')}
@@ -250,6 +242,13 @@ export default function DesaparecidosPage() {
           <span className="nav-label">Pets</span>
         </button>
         <button 
+          onClick={() => router.push('/desaparecidos')}
+          className="nav-item active"
+        >
+          <span className="nav-icon">⚠️</span>
+          <span className="nav-label">Desaparecidos</span>
+        </button>
+        <button 
           onClick={() => router.push('/loja')}
           className="nav-item"
         >
@@ -257,11 +256,11 @@ export default function DesaparecidosPage() {
           <span className="nav-label">Loja</span>
         </button>
         <button 
-          onClick={() => router.push('/desaparecidos')}
-          className="nav-item active"
+          onClick={() => router.push('/community')}
+          className="nav-item"
         >
-          <span className="nav-icon">⚠️</span>
-          <span className="nav-label">Desaparecidos</span>
+          <span className="nav-icon">👥</span>
+          <span className="nav-label">Comunidade</span>
         </button>
       </nav>
     </div>

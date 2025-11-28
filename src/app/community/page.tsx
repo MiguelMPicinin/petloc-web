@@ -2,7 +2,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
 import { NewsArticle, newsService } from '@/services/newsService';
 
@@ -56,7 +56,6 @@ export default function CommunityPage() {
       return;
     }
 
-    // Carregar posts do blog com filtro de categoria
     let blogQuery;
     if (categoriaSelecionada === 'Todos') {
       blogQuery = query(
@@ -85,7 +84,6 @@ export default function CommunityPage() {
       setLoading(false);
     });
 
-    // Carregar grupos de chat
     const chatUnsubscribe = onSnapshot(
       query(collection(db, 'chat_grupos'), where('ativo', '!=', false)),
       (snapshot) => {
@@ -105,7 +103,6 @@ export default function CommunityPage() {
     };
   }, [user, router, categoriaSelecionada]);
 
-  // Carregar notícias da API quando a aba de blog estiver ativa
   useEffect(() => {
     if (abaAtiva === 'blog') {
       loadApiNews();
@@ -118,12 +115,22 @@ export default function CommunityPage() {
     try {
       const news = await newsService.fetchAllPetNews();
       
-      // Filtrar por categoria se necessário
-      const filteredNews = categoriaSelecionada === 'Todos' 
-        ? news 
-        : news.filter(article => article.category === categoriaSelecionada);
+      const newsManagementSnapshot = await getDocs(collection(db, 'api_news_management'));
+      const hiddenNewsIds: string[] = [];
+      newsManagementSnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.hidden === true) {
+          hiddenNewsIds.push(data.newsId);
+        }
+      });
       
-      setApiNews(filteredNews);
+      const filteredNews = news.filter(article => !hiddenNewsIds.includes(article.id));
+      
+      const categorizedNews = categoriaSelecionada === 'Todos' 
+        ? filteredNews 
+        : filteredNews.filter(article => article.category === categoriaSelecionada);
+      
+      setApiNews(categorizedNews);
     } catch (error: any) {
       console.error('Erro ao carregar notícias:', error);
       setError('Erro ao carregar notícias da internet. Tente novamente.');
@@ -142,10 +149,9 @@ export default function CommunityPage() {
 
   return (
     <div className="min-h-screen bg-background-color pb-16">
-      {/* Header */}
       <header className="header">
         <div className="header-content">
-          <div className="flex items-center space-x-3">
+          <div className="header-left">
             <button
               onClick={() => router.push('/home')}
               className="p-2 hover:bg-primary-dark rounded-lg transition-colors"
@@ -157,7 +163,6 @@ export default function CommunityPage() {
         </div>
       </header>
 
-      {/* Abas */}
       <div className="flex border-b bg-surface-color">
         <button
           onClick={() => setAbaAtiva('blog')}
@@ -183,7 +188,6 @@ export default function CommunityPage() {
 
       {abaAtiva === 'blog' && (
         <div className="container">
-          {/* Header do Blog com botão de refresh */}
           <div className="flex-between mb-4 mt-4">
             <h2 className="text-lg font-semibold text-on-surface">Notícias sobre Pets</h2>
             <button
@@ -196,7 +200,6 @@ export default function CommunityPage() {
             </button>
           </div>
 
-          {/* Categorias */}
           <div className="flex overflow-x-auto py-2 mb-4 space-x-2 scrollbar-hide">
             {categorias.map((categoria) => (
               <button
@@ -219,9 +222,7 @@ export default function CommunityPage() {
             </div>
           )}
 
-          {/* Conteúdo Combinado */}
           <div className="space-y-6">
-            {/* Notícias do Firestore */}
             {blogPosts.length > 0 && (
               <div>
                 <h3 className="text-md font-semibold text-on-surface mb-3">Notícias do Nosso Blog</h3>
@@ -233,7 +234,6 @@ export default function CommunityPage() {
               </div>
             )}
 
-            {/* Notícias da API */}
             {filteredApiNews.length > 0 && (
               <div>
                 <h3 className="text-md font-semibold text-on-surface mb-3">Notícias da Internet</h3>
@@ -245,7 +245,6 @@ export default function CommunityPage() {
               </div>
             )}
 
-            {/* Loading API News */}
             {loadingApiNews && (
               <div className="flex-center py-8">
                 <div className="loading-spinner-primary"></div>
@@ -253,7 +252,6 @@ export default function CommunityPage() {
               </div>
             )}
 
-            {/* Estado Vazio */}
             {!loading && !loadingApiNews && blogPosts.length === 0 && filteredApiNews.length === 0 && (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4 text-gray-300">📝</div>
@@ -317,7 +315,6 @@ export default function CommunityPage() {
         </div>
       )}
 
-      {/* Navigation */}
       <nav className="nav-bar">
         <button 
           onClick={() => router.push('/home')}
@@ -332,6 +329,13 @@ export default function CommunityPage() {
         >
           <span className="nav-icon">🐾</span>
           <span className="nav-label">Pets</span>
+        </button>
+        <button 
+          onClick={() => router.push('/desaparecidos')}
+          className="nav-item"
+        >
+          <span className="nav-icon">⚠️</span>
+          <span className="nav-label">Desaparecidos</span>
         </button>
         <button 
           onClick={() => router.push('/loja')}
@@ -352,7 +356,6 @@ export default function CommunityPage() {
   );
 }
 
-// Componente para exibir um post do blog (Firestore)
 function BlogPostCard({ post }: { post: BlogPost }) {
   const router = useRouter();
 
@@ -390,7 +393,6 @@ function BlogPostCard({ post }: { post: BlogPost }) {
   );
 }
 
-// Componente para exibir notícia da API
 function NewsCard({ article }: { article: NewsArticle }) {
   const handleClick = () => {
     window.open(article.url, '_blank', 'noopener,noreferrer');
@@ -444,13 +446,12 @@ function NewsCard({ article }: { article: NewsArticle }) {
     >
       <div className="flex flex-col">
         {article.urlToImage && (
-          <div className="relative h-48 w-full mb-3">
+          <div className="relative w-full mb-3 imagem-container">
             <img
               src={article.urlToImage}
               alt={article.title}
-              className="rounded-t-lg object-cover w-full h-full"
+              className="img-limitada rounded-t-lg w-full"
               onError={(e) => {
-                // Fallback para imagem quebrada
                 e.currentTarget.style.display = 'none';
               }}
             />
@@ -488,7 +489,6 @@ function NewsCard({ article }: { article: NewsArticle }) {
   );
 }
 
-// Componente para grupo de chat
 function ChatGroupCard({ group }: { group: ChatGroup }) {
   const router = useRouter();
 

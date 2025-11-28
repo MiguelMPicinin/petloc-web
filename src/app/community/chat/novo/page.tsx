@@ -2,7 +2,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 
 const categorias = [
@@ -45,20 +45,23 @@ export default function NovoChatGroupPage() {
     }
 
     try {
-      await addDoc(collection(db, 'chat_grupos'), {
+      const grupoData = {
         nome: nome.trim(),
         descricao: descricao.trim(),
         categoria: categoria,
         icone: icone,
         criadorId: user.uid,
         criadorNome: user.displayName || 'Usuário',
-        membrosCount: 1,
         membros: [user.uid],
+        membrosCount: 1,
         ultimaMensagem: '',
+        ultimaMensagemData: serverTimestamp(),
         ativo: true,
-        criadoEm: new Date(),
-        atualizadoEm: new Date(),
-      });
+        criadoEm: serverTimestamp(),
+        atualizadoEm: serverTimestamp(),
+      };
+
+      await addDoc(collection(db, 'chat_grupos'), grupoData);
 
       router.push('/community');
     } catch (error: any) {

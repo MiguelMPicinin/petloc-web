@@ -68,10 +68,10 @@ export default function ComprarProdutoPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background-color">
         <header className="header">
           <div className="header-content">
-            <div className="flex items-center space-x-3">
+            <div className="header-left">
               <button
                 onClick={() => router.push('/loja')}
                 className="p-2 hover:bg-primary-dark rounded transition-colors"
@@ -94,10 +94,10 @@ export default function ComprarProdutoPage() {
 
   if (!produto) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background-color">
         <header className="header">
           <div className="header-content">
-            <div className="flex items-center space-x-3">
+            <div className="header-left">
               <button
                 onClick={() => router.push('/loja')}
                 className="p-2 hover:bg-primary-dark rounded transition-colors"
@@ -131,11 +131,10 @@ export default function ComprarProdutoPage() {
   const estoqueDisponivel = produto.estoque || 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
+    <div className="min-h-screen bg-background-color">
       <header className="header">
         <div className="header-content">
-          <div className="flex items-center space-x-3">
+          <div className="header-left">
             <button
               onClick={() => router.push('/loja')}
               className="p-2 hover:bg-primary-dark rounded transition-colors"
@@ -158,7 +157,6 @@ export default function ComprarProdutoPage() {
         </div>
       </header>
 
-      {/* Conteúdo Principal */}
       <main className="pb-24">
         <div className="container">
           {error && (
@@ -167,15 +165,13 @@ export default function ComprarProdutoPage() {
             </div>
           )}
 
-          {/* Card do Produto */}
           <div className="card overflow-hidden">
-            {/* Imagem do Produto */}
-            <div className="relative bg-gray-50">
+            <div className="relative bg-gray-50 imagem-container">
               {produto.imagemBase64 ? (
                 <img
                   src={`data:image/jpeg;base64,${produto.imagemBase64}`}
                   alt={produto.nome}
-                  className="w-full h-48 object-contain"
+                  className="img-limitada-contain w-full"
                 />
               ) : (
                 <div className="w-full h-48 bg-gray-100 flex-center">
@@ -189,14 +185,12 @@ export default function ComprarProdutoPage() {
               )}
             </div>
 
-            {/* Informações do Produto */}
             <div className="p-4">
               <h1 className="text-lg font-bold text-on-surface mb-2">{produto.nome}</h1>
               <p className="text-xl font-bold text-primary mb-3">
                 R$ {precoUnitario.toFixed(2)}
               </p>
 
-              {/* Status do Estoque */}
               {!semEstoque && estoqueDisponivel > 0 && (
                 <div className="flex items-center mb-3">
                   <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-1 flex items-center">
@@ -208,13 +202,11 @@ export default function ComprarProdutoPage() {
                 </div>
               )}
 
-              {/* Descrição */}
               <div className="mb-4">
                 <h2 className="text-base font-semibold text-on-surface mb-2">Descrição</h2>
                 <p className="text-on-surface leading-relaxed text-sm">{produto.descricao}</p>
               </div>
 
-              {/* Quantidade */}
               {!semEstoque && (
                 <div className="mb-4">
                   <h2 className="text-base font-semibold text-on-surface mb-2">Quantidade</h2>
@@ -238,7 +230,6 @@ export default function ComprarProdutoPage() {
                 </div>
               )}
 
-              {/* Informações do Vendedor */}
               <div className="bg-gray-50 rounded-lg p-3 mb-4">
                 <h3 className="font-semibold text-on-surface mb-2 text-sm">Informações do Vendedor</h3>
                 <div className="flex items-center">
@@ -252,7 +243,6 @@ export default function ComprarProdutoPage() {
                 </div>
               </div>
 
-              {/* Entrega e Pagamento */}
               <div className="mb-4">
                 <h3 className="text-base font-semibold text-on-surface mb-2">Entrega e Pagamento</h3>
                 <div className="space-y-2">
@@ -275,7 +265,6 @@ export default function ComprarProdutoPage() {
                 </div>
               </div>
 
-              {/* Total */}
               {!semEstoque && (
                 <div className="bg-blue-50 rounded-lg p-3 mb-4 border border-blue-200">
                   <div className="flex justify-between items-center">
@@ -291,7 +280,6 @@ export default function ComprarProdutoPage() {
         </div>
       </main>
 
-      {/* Botão de Ação Fixo */}
       <div className="fixed bottom-0 left-0 right-0 bg-surface border-t border-gray-200 p-4">
         <div className="container">
           <button

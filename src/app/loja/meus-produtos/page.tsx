@@ -2,7 +2,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 
 interface Produto {
@@ -66,14 +66,11 @@ export default function MeusProdutosPage() {
     }
   };
 
-  const deletarProduto = async (produtoId: string) => {
-    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+  const excluirProduto = async (produtoId: string) => {
+    if (!confirm('Tem certeza que deseja EXCLUIR PERMANENTEMENTE este produto? Esta ação não pode ser desfeita.')) return;
     
     try {
-      await updateDoc(doc(db, 'produtos_loja', produtoId), {
-        ativo: false,
-        atualizadoEm: new Date(),
-      });
+      await deleteDoc(doc(db, 'produtos_loja', produtoId));
     } catch (error: any) {
       setError('Erro ao excluir produto: ' + error.message);
     }
@@ -84,44 +81,43 @@ export default function MeusProdutosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="header">
-        <div className="header-content">
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => router.push('/loja')}
-              className="p-2 hover:bg-primary-dark rounded transition-colors"
-            >
-              <span className="text-lg">←</span>
-            </button>
-            <h1 className="text-xl font-bold text-on-primary">Meus Produtos</h1>
-          </div>
-          
-          <div className="header-right">
-            <div className="header-actions">
+    <div className="min-h-screen bg-background-color flex flex-col">
+      <header className="w-full bg-primary fixed top-0 left-0 right-0 z-50 shadow-md">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
               <button
-                onClick={() => router.push('/loja/cadastro-produto')}
-                className="header-action-btn"
-                title="Adicionar Produto"
+                onClick={() => router.push('/loja')}
+                className="p-2 hover:bg-primary-dark rounded transition-colors"
               >
-                <span className="text-lg">+</span>
+                <span className="text-lg text-on-primary">←</span>
               </button>
+              <h1 className="text-xl font-bold text-on-primary">Meus Produtos</h1>
+            </div>
+            
+            <div className="header-right">
+              <div className="header-actions">
+                <button
+                  onClick={() => router.push('/loja/cadastro-produto')}
+                  className="header-action-btn"
+                  title="Adicionar Produto"
+                >
+                  <span className="text-lg text-on-primary">+</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Conteúdo Principal */}
-      <main className="flex-1 pb-20">
-        <div className="container">
+      <main className="flex-1 pb-20 pt-16">
+        <div className="container px-4">
           {error && (
             <div className="alert alert-error mb-4">
               {error}
             </div>
           )}
 
-          {/* Header com contador */}
           <div className="flex-between mb-4 mt-4">
             <h2 className="text-lg font-semibold text-on-surface">
               {produtos.length} produto{produtos.length !== 1 ? 's' : ''} cadastrado{produtos.length !== 1 ? 's' : ''}
@@ -161,7 +157,7 @@ export default function MeusProdutosPage() {
                   key={produto.id} 
                   produto={produto} 
                   onToggleActive={toggleProdutoAtivo}
-                  onDelete={deletarProduto}
+                  onDelete={excluirProduto}
                 />
               ))}
             </div>
@@ -169,7 +165,6 @@ export default function MeusProdutosPage() {
         </div>
       </main>
 
-      {/* Navigation - Fixa no final */}
       <nav className="nav-bar fixed bottom-0 left-0 right-0">
         <button 
           onClick={() => router.push('/home')}
@@ -184,6 +179,13 @@ export default function MeusProdutosPage() {
         >
           <span className="nav-icon">🐾</span>
           <span className="nav-label">Pets</span>
+        </button>
+        <button 
+          onClick={() => router.push('/desaparecidos')}
+          className="nav-item"
+        >
+          <span className="nav-icon">⚠️</span>
+          <span className="nav-label">Desaparecidos</span>
         </button>
         <button 
           onClick={() => router.push('/loja')}
@@ -204,7 +206,6 @@ export default function MeusProdutosPage() {
   );
 }
 
-// Componente para Card de Produto do Usuário
 function MyProductCard({ 
   produto, 
   onToggleActive, 
@@ -219,14 +220,13 @@ function MyProductCard({
   return (
     <div className="card hover-lift transition-all duration-200 hover:shadow-md">
       <div className="flex items-start space-x-3">
-        {/* Imagem do Produto */}
         <div className="flex-shrink-0">
-          <div className="w-14 h-14 rounded-lg bg-gray-100 overflow-hidden flex-center">
+          <div className="w-14 h-14 rounded-lg bg-gray-100 overflow-hidden flex-center imagem-container">
             {produto.imagemBase64 ? (
               <img
                 src={`data:image/jpeg;base64,${produto.imagemBase64}`}
                 alt={produto.nome}
-                className="w-full h-full object-cover"
+                className="img-limitada-small w-full h-full"
               />
             ) : (
               <span className="text-lg text-gray-400">🛍️</span>
@@ -234,7 +234,6 @@ function MyProductCard({
           </div>
         </div>
 
-        {/* Informações do Produto */}
         <div className="flex-1 min-w-0">
           <div className="flex-between mb-2">
             <div>
@@ -274,7 +273,6 @@ function MyProductCard({
             </div>
           </div>
 
-          {/* Ações */}
           <div className="flex space-x-2 mt-2">
             <button
               onClick={() => onToggleActive(produto.id, produto.ativo)}

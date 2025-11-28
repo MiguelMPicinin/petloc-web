@@ -109,7 +109,6 @@ export default function AdminMissingPetsPage() {
 
   return (
     <div className="min-h-screen bg-background-color p-4">
-      {/* Header com Navegação */}
       <header className="card mb-6">
         <div className="flex-between mb-4">
           <div>
@@ -136,7 +135,6 @@ export default function AdminMissingPetsPage() {
           </div>
         </div>
 
-        {/* Navegação entre Telas Admin */}
         <nav className="flex space-x-2 border-t pt-4 mt-4 flex-wrap gap-2">
           <button
             onClick={() => router.push('/admin/users')}
@@ -165,7 +163,6 @@ export default function AdminMissingPetsPage() {
         </nav>
       </header>
 
-      {/* Filtros */}
       <div className="flex space-x-2 mb-6">
         {[
           { key: 'todos', label: 'Todos' },
@@ -192,7 +189,6 @@ export default function AdminMissingPetsPage() {
         </div>
       )}
 
-      {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="card text-center">
           <div className="text-2xl font-bold text-primary-color">{desaparecidos.length}</div>

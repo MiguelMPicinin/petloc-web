@@ -21,12 +21,10 @@ export default function HomePage() {
   const [petsLoading, setPetsLoading] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
 
-  // 🔄 REDIRECIONAMENTO AUTOMÁTICO PARA ADMIN
   useEffect(() => {
     if (!authLoading && userRole === 'admin') {
       console.log('🔄 Usuário é admin, redirecionando para painel administrativo...');
       setRedirecting(true);
-      // Redireciona para a primeira página do admin
       setTimeout(() => {
         router.push('/admin/users');
       }, 500);
@@ -39,7 +37,7 @@ export default function HomePage() {
       return;
     }
 
-    if (user && userRole !== 'admin') { // Só carrega pets se não for admin (pois será redirecionado)
+    if (user && userRole !== 'admin') {
       const q = query(
         collection(db, 'pets'),
         where('userId', '==', user.uid)
@@ -98,7 +96,6 @@ export default function HomePage() {
     { title: 'Pets Desaparecidos', icon: '🐕', section: 'missing-pets' },
   ];
 
-  // 🔄 Tela de carregamento durante redirecionamento
   if (redirecting) {
     return (
       <div className="min-h-screen bg-background-color flex-center">
@@ -122,7 +119,6 @@ export default function HomePage() {
     );
   }
 
-  // 🎯 VERIFICAÇÃO DE ADMIN (backup caso o redirecionamento falhe)
   if (userRole === 'admin') {
     return (
       <div className="min-h-screen bg-background-color flex-center">
@@ -142,15 +138,13 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background-color pb-16">
-      {/* Header */}
       <header className="header">
         <div className="header-content">
-          <div className="header-brand">
+          <div className="header-left">
             <span>🐾</span>
             <span>PetLoc</span>
           </div>
           <div className="flex items-center space-x-3">
-            {/* Indicador de Status */}
             <div className="hidden sm:flex items-center space-x-2">
               <span className="text-sm text-blue-100">
                 {user?.email}
@@ -174,7 +168,6 @@ export default function HomePage() {
       </header>
 
       <div className="container">
-        {/* Seção de Boas-vindas */}
         <section className="mb-6">
           <div className="card text-center">
             <h2 className="text-2xl font-bold mb-2">
@@ -184,7 +177,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Seção Pets */}
         <section className="mb-6">
           <div className="flex-between mb-4">
             <h3 className="text-lg font-semibold">Meus Pets</h3>
@@ -237,7 +229,6 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* Funcionalidades Principais */}
         <section className="mb-6">
           <h3 className="text-lg font-semibold mb-4">Funcionalidades</h3>
           <div className="grid grid-cols-2 gap-4">
@@ -257,7 +248,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Seção Admin (apenas se for admin - backup) */}
         {userRole === 'admin' && (
           <section className="mb-6">
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
@@ -289,7 +279,6 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Navigation */}
       <nav className="nav-bar">
         <button 
           onClick={() => router.push('/home')}
@@ -304,6 +293,13 @@ export default function HomePage() {
         >
           <span className="nav-icon">🐾</span>
           <span className="nav-label">Pets</span>
+        </button>
+        <button 
+          onClick={() => router.push('/desaparecidos')}
+          className="nav-item"
+        >
+          <span className="nav-icon">⚠️</span>
+          <span className="nav-label">Desaparecidos</span>
         </button>
         <button 
           onClick={() => router.push('/loja')}

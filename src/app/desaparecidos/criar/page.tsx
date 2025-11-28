@@ -113,11 +113,11 @@ export default function CriarDesaparecidoPage() {
             
             {imagemPreview ? (
               <div className="text-center">
-                <div className="relative inline-block">
+                <div className="relative inline-block imagem-container">
                   <img
                     src={imagemPreview}
                     alt="Preview"
-                    className="w-48 h-48 rounded-lg object-cover mx-auto shadow-md"
+                    className="img-limitada rounded-lg mx-auto shadow-md"
                   />
                   <button
                     type="button"

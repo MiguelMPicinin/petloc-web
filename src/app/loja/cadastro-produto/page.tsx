@@ -15,6 +15,8 @@ const categorias = [
   'Outros'
 ];
 
+const icones = ['💬', '🐕', '🐈', '🐦', '🐹', '🐍', '🐠', '🐢', '🌟', '❤️'];
+
 export default function CadastroProdutoPage() {
   const { user } = useAuth();
   const router = useRouter();
@@ -104,33 +106,30 @@ export default function CadastroProdutoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="header">
-        <div className="header-content">
+    <div className="min-h-screen bg-background-color flex flex-col">
+      <header className="w-full bg-primary fixed top-0 left-0 right-0 z-50 shadow-md">
+        <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center space-x-3">
             <button
               onClick={() => router.push('/loja/meus-produtos')}
               className="p-2 hover:bg-primary-dark rounded transition-colors"
             >
-              <span className="text-lg">←</span>
+              <span className="text-lg text-on-primary">←</span>
             </button>
             <h1 className="text-xl font-bold text-on-primary">Cadastrar Produto</h1>
           </div>
         </div>
       </header>
 
-      {/* Conteúdo Principal */}
-      <main className="flex-1 pb-20">
-        <div className="container">
-          <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
+      <main className="flex-1 pb-20 pt-16 flex justify-center">
+        <div className="w-full max-w-2xl px-4">
+          <form onSubmit={handleSubmit} className="w-full">
             {error && (
               <div className="alert alert-error mb-4">
                 {error}
               </div>
             )}
 
-            {/* Upload de Imagem */}
             <div className="card mb-4">
               <label className="form-label">
                 Imagem do Produto
@@ -138,11 +137,11 @@ export default function CadastroProdutoPage() {
               
               {imagemPreview ? (
                 <div className="text-center">
-                  <div className="relative inline-block">
+                  <div className="relative inline-block imagem-container">
                     <img
                       src={imagemPreview}
                       alt="Preview"
-                      className="w-32 h-32 rounded-lg object-cover mx-auto shadow-md"
+                      className="img-limitada-medium rounded-lg mx-auto shadow-md"
                     />
                     <button
                       type="button"
@@ -176,7 +175,6 @@ export default function CadastroProdutoPage() {
               )}
             </div>
 
-            {/* Formulário */}
             <div className="card space-y-4">
               <div className="form-group">
                 <label className="form-label">
@@ -294,7 +292,6 @@ export default function CadastroProdutoPage() {
         </div>
       </main>
 
-      {/* Navigation - Fixa no final */}
       <nav className="nav-bar fixed bottom-0 left-0 right-0">
         <button 
           onClick={() => router.push('/home')}
@@ -309,6 +306,13 @@ export default function CadastroProdutoPage() {
         >
           <span className="nav-icon">🐾</span>
           <span className="nav-label">Pets</span>
+        </button>
+        <button 
+          onClick={() => router.push('/desaparecidos')}
+          className="nav-item"
+        >
+          <span className="nav-icon">⚠️</span>
+          <span className="nav-label">Desaparecidos</span>
         </button>
         <button 
           onClick={() => router.push('/loja')}

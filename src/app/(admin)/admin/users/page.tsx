@@ -73,7 +73,6 @@ export default function AdminUsersPage() {
 
   return (
     <div className="min-h-screen bg-background-color p-4">
-      {/* Header com Navegação */}
       <header className="card mb-6">
         <div className="flex-between mb-4">
           <div>
@@ -100,7 +99,6 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        {/* Navegação entre Telas Admin */}
         <nav className="flex space-x-2 border-t pt-4 mt-4 flex-wrap gap-2">
           <button
             onClick={() => router.push('/admin/users')}
@@ -129,7 +127,6 @@ export default function AdminUsersPage() {
         </nav>
       </header>
 
-      {/* Barra de Pesquisa */}
       <div className="card mb-6">
         <input
           type="text"
@@ -146,7 +143,6 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* Tabela de Usuários */}
       <div className="card overflow-hidden">
         {loading ? (
           <div className="flex-center py-12">
@@ -249,7 +245,6 @@ export default function AdminUsersPage() {
         )}
       </div>
 
-      {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
         <div className="card text-center">
           <div className="text-2xl font-bold text-primary-color">{users.length}</div>
